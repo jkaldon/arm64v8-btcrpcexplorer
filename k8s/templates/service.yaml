@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "arm64v8-btcrpcexplorer.fullname" . }}
+  labels:
+    {{- include "arm64v8-btcrpcexplorer.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports: {{- toYaml .Values.service.ports | nindent 4 }}
+  selector:
+    {{- include "arm64v8-btcrpcexplorer.selectorLabels" . | nindent 4 }}

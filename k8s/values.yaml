@@ -1,0 +1,89 @@
+# Default values for arm64v8-btcrpcexplorer
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: jkaldon/arm64v8-btcrpcexplorer
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "3.3.0-1"
+
+env:
+- name: BTCEXP_BITCOIND_HOST
+  value: bitcoind.bitcoin.svc.cluster.local
+- name: BTCEXP_BITCOIND_PORT
+  value: 8332
+- name: BTCEXP_BITCOIND_RPC_TIMEOUT
+  value: 10000
+- name: BTCEXP_ADDRESS_API
+  value: electrum
+- name: BTCEXP_ELECTRUM_SERVERS
+  value: tcp://electrs.bitcoin.svc.cluster.local:50001
+- name: BTCEXP_PRIVACY_MODE
+  value: true
+- name: BTCEXP_NO_RATES
+  value: true
+- name: BTCEXP_UI_THEME
+  value: dark
+
+persistence:
+  enabled: true
+  ## A manually managed Persistent Volume and Claim
+  ## Requires persistence.enabled: true
+  ## If defined, PVC must be created manually before volume will be bound
+  existingClaim:
+  ## jenkins data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  storageClass: nfs-client
+  annotations: {}
+  accessMode: "ReadWriteOnce"
+  size: "8Gi"
+  volumes:
+  - name: btcrpcexplorer-data
+    persistentVolumeClaim:
+      claimName: btcrpcexplorer
+  mounts:
+  - name: btcrpcexplorer-data
+    mountPath: /data
+    readOnly: false
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: LoadBalancer
+  ports:
+    - port: 50001
+      targetPort: 50001
+      protocol: TCP
+      name: rpc
