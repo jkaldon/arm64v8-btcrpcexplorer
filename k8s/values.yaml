@@ -8,51 +8,43 @@ image:
   repository: jkaldon/arm64v8-btcrpcexplorer
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "3.3.0-1"
+  tag: "3.3.0-3"
 
+envFrom:
+- secretRef:
+    name: btcrpcexplorer-rpc-creds
+
+#
+# Environmental settings can be found at the URL below:
+# https://github.com/janoside/btc-rpc-explorer/blob/master/.env-sample
+#
 env:
 - name: BTCEXP_BITCOIND_HOST
-  value: bitcoind.bitcoin.svc.cluster.local
+  value: "bitcoind.bitcoin.svc.cluster.local"
 - name: BTCEXP_BITCOIND_PORT
-  value: 8332
+  value: "8332"
 - name: BTCEXP_BITCOIND_RPC_TIMEOUT
-  value: 10000
+  value: "10000"
 - name: BTCEXP_ADDRESS_API
-  value: electrum
+  value: "electrum"
 - name: BTCEXP_ELECTRUM_SERVERS
-  value: tcp://electrs.bitcoin.svc.cluster.local:50001
+  value: "tcp://electrs.bitcoin.svc.cluster.local:50001"
 - name: BTCEXP_PRIVACY_MODE
-  value: true
+  value: "true"
 - name: BTCEXP_NO_RATES
-  value: true
+  value: "true"
 - name: BTCEXP_UI_THEME
-  value: dark
-
-persistence:
-  enabled: true
-  ## A manually managed Persistent Volume and Claim
-  ## Requires persistence.enabled: true
-  ## If defined, PVC must be created manually before volume will be bound
-  existingClaim:
-  ## jenkins data Persistent Volume Storage Class
-  ## If defined, storageClassName: <storageClass>
-  ## If set to "-", storageClassName: "", which disables dynamic provisioning
-  ## If undefined (the default) or set to null, no storageClassName spec is
-  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
-  ##   GKE, AWS & OpenStack)
-  ##
-  storageClass: nfs-client
-  annotations: {}
-  accessMode: "ReadWriteOnce"
-  size: "8Gi"
-  volumes:
-  - name: btcrpcexplorer-data
-    persistentVolumeClaim:
-      claimName: btcrpcexplorer
-  mounts:
-  - name: btcrpcexplorer-data
-    mountPath: /data
-    readOnly: false
+  value: "dark"
+- name: BTCEXP_UI_TIMEZONE
+  value: "local"
+- name: BTCEXP_UI_HOME_PAGE_LATEST_BLOCKS_COUNT
+  value: "5"
+- name: BTCEXP_UI_BLOCKS_PAGE_BLOCK_COUNT
+  value: "20"
+- name: BTCEXP_HOST
+  value: "0.0.0.0"
+- name: BTCEXP_PORT
+  value: "4000"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -81,9 +73,22 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
-    - port: 50001
-      targetPort: 50001
+    - port: 4000
+      targetPort: 4000
       protocol: TCP
-      name: rpc
+      name: http
+
+ingress:
+  enabled: true
+  paths: []
+  labels: {}
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/ingress.class: nginx
+  hostName: btc.local.kaldon.com
+  tls:
+  - secretName: tls-btc.local.kaldon.com
+    hosts:
+    - btc.local.kaldon.com

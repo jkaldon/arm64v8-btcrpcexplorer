@@ -1,0 +1,69 @@
+{{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
+{{- if .Values.ingress.enabled }}
+{{- if semverCompare ">=1.19-0" $kubeTargetVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" $kubeTargetVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: {{ .Values.ingress.apiVersion }}
+{{- end }}
+kind: Ingress
+metadata:
+  labels:
+    "app.kubernetes.io/name": '{{ template "arm64v8-btcrpcexplorer.name" .}}'
+    {{- if .Values.renderHelmLabels }}
+    "helm.sh/chart": "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    {{- end }}
+    "app.kubernetes.io/managed-by": "{{ .Release.Service }}"
+    "app.kubernetes.io/instance": "{{ .Release.Name }}"
+{{- if .Values.ingress.labels }}
+{{- toYaml .Values.ingress.labels | nindent 4 }}
+{{- end }}
+{{- if .Values.ingress.annotations }}
+  annotations: {{ toYaml .Values.ingress.annotations | nindent 4 }}
+{{- end }}
+  name: {{ template "arm64v8-btcrpcexplorer.fullname" . }}
+spec:
+  rules:
+  - http:
+      paths:
+{{- if empty (.Values.ingress.paths) }}
+      - backend:
+  {{- if semverCompare ">=1.19-0" $kubeTargetVersion }}
+          service:
+            name: {{ template "arm64v8-btcrpcexplorer.fullname" . }}
+            port:
+              number: 4000
+        pathType: ImplementationSpecific
+  {{- else }}
+          serviceName: {{ template "arm64v8-btcrpcexplorer.fullname" . }}
+          servicePort: 4000
+  {{- end }}
+  {{- if .Values.ingress.path }}
+        path: {{ .Values.ingress.path }}
+  {{- end -}}
+{{- else }}
+  {{ tpl (toYaml .Values.ingress.paths | indent 6) . }}
+{{- end -}}
+  {{- if .Values.ingress.hostName }}
+    host: {{ .Values.ingress.hostName | quote }}
+  {{- end }}
+  {{- if .Values.ingress.resourceRootUrl }}
+  - http:
+      paths:
+      - backend:
+        {{- if semverCompare ">=1.19-0" $kubeTargetVersion }}
+          service:
+            name: {{ template "arm64v8-btcrpcexplorer.fullname" . }}
+            port:
+              number: 4000
+        {{- else }}
+          serviceName: {{ template "arm64v8-btcrpcexplorer.fullname" . }}
+          servicePort: 4000
+        {{- end }}
+    host: {{ .Values.ingress.resourceRootUrl | quote }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls: {{ toYaml .Values.ingress.tls | nindent 4 }}
+  {{- end -}}
+{{- end }}

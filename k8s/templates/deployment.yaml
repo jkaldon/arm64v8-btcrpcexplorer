@@ -32,9 +32,6 @@ spec:
           {{- with .Values.env }}
           env: {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.persistence.mounts }}
-          volumeMounts: {{- toYaml . | nindent 12 }}
+          {{- with .Values.envFrom }}
+          envFrom: {{- toYaml . | nindent 12 }}
           {{- end }}
-      {{- with .Values.persistence.volumes }}
-      volumes: {{- toYaml . | nindent 6 }}
-      {{- end }}
